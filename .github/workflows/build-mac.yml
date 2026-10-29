@@ -1,0 +1,42 @@
+name: Lemon Studio - Mac M2
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-mac:
+    name: Build Lemon Studio for Apple Silicon
+    runs-on: macos-15
+    timeout-minutes: 120
+
+    env:
+      CARGO_BUILD_JOBS: "2"
+      CARGO_INCREMENTAL: "0"
+
+    steps:
+      - name: Download source code
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build Lemon Studio.app
+        run: cargo run -p bundle-app --locked
+
+      - name: Package the application
+        run: |
+          test -d "target/bundled/Lemon Studio.app"
+          ditto -c -k --sequesterRsrc --keepParent \
+            "target/bundled/Lemon Studio.app" \
+            "Lemon-Studio-Mac-M2.zip"
+
+      - name: Upload application
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lemon-Studio-Mac-M2
+          path: Lemon-Studio-Mac-M2.zip
+          if-no-files-found: error
+          retention-days: 7
